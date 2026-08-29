@@ -1,0 +1,9 @@
+{
+  "case_id": "serialization_frame_length_prefix_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/serialization_frame_length_prefix_001",
+  "tier": "authored",
+  "domain": "serialization",
+  "seed": 1337
+}

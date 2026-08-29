@@ -1,0 +1,9 @@
+{
+  "case_id": "concurrency_lease_expiry_boundary_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/concurrency_lease_expiry_boundary_001",
+  "tier": "authored",
+  "domain": "concurrency",
+  "seed": 1337
+}

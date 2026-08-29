@@ -1,0 +1,9 @@
+{
+  "case_id": "sql_or_group_parentheses_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/sql_or_group_parentheses_001",
+  "tier": "authored",
+  "domain": "sql",
+  "seed": 1337
+}

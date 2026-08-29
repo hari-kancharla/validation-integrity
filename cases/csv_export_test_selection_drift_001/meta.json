@@ -1,0 +1,9 @@
+{
+  "case_id": "csv_export_test_selection_drift_001",
+  "correct_variant": "b",
+  "family": "adapted",
+  "source": "benchmark_sets/integrity_pilot_v0/csv_export_test_selection_drift_001",
+  "tier": "authored",
+  "domain": "adapted_integrity",
+  "seed": 1337
+}

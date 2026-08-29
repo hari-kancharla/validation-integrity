@@ -1,0 +1,9 @@
+{
+  "case_id": "sql_like_pattern_escaping_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/sql_like_pattern_escaping_001",
+  "tier": "authored",
+  "domain": "sql",
+  "seed": 1337
+}

@@ -1,0 +1,9 @@
+{
+  "case_id": "resource_cleanup_release_on_error_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/resource_cleanup_release_on_error_001",
+  "tier": "authored",
+  "domain": "resource_cleanup",
+  "seed": 1337
+}

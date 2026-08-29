@@ -1,0 +1,9 @@
+{
+  "case_id": "encoding_byte_budget_truncation_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/encoding_byte_budget_truncation_001",
+  "tier": "authored",
+  "domain": "encoding",
+  "seed": 1337
+}

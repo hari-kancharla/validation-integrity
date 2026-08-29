@@ -1,0 +1,9 @@
+{
+  "case_id": "concurrency_reentrant_lock_depth_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/concurrency_reentrant_lock_depth_001",
+  "tier": "authored",
+  "domain": "concurrency",
+  "seed": 1337
+}

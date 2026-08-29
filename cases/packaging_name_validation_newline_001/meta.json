@@ -1,0 +1,9 @@
+{
+  "case_id": "packaging_name_validation_newline_001",
+  "correct_variant": "a",
+  "family": "historical",
+  "source": "historical/packaging_name_validation_newline_001",
+  "tier": "historical",
+  "domain": "encoding",
+  "seed": 1337
+}

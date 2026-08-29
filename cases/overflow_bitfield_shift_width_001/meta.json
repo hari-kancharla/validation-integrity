@@ -1,0 +1,9 @@
+{
+  "case_id": "overflow_bitfield_shift_width_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/overflow_bitfield_shift_width_001",
+  "tier": "authored",
+  "domain": "overflow",
+  "seed": 1337
+}

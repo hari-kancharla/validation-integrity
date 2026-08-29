@@ -1,0 +1,9 @@
+{
+  "case_id": "sql_in_clause_empty_set_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/sql_in_clause_empty_set_001",
+  "tier": "authored",
+  "domain": "sql",
+  "seed": 1337
+}

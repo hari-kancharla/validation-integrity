@@ -1,0 +1,9 @@
+{
+  "case_id": "sorting_priority_total_order_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/sorting_priority_total_order_001",
+  "tier": "authored",
+  "domain": "sorting",
+  "seed": 1337
+}

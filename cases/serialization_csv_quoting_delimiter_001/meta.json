@@ -1,0 +1,9 @@
+{
+  "case_id": "serialization_csv_quoting_delimiter_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/serialization_csv_quoting_delimiter_001",
+  "tier": "authored",
+  "domain": "serialization",
+  "seed": 1337
+}

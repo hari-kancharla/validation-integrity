@@ -1,0 +1,9 @@
+{
+  "case_id": "rate_limit_decorator_dead_deliverable_001",
+  "correct_variant": "b",
+  "family": "adapted",
+  "source": "benchmark_sets/integrity_pilot_v0/rate_limit_decorator_dead_deliverable_001",
+  "tier": "authored",
+  "domain": "adapted_integrity",
+  "seed": 1337
+}

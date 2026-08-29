@@ -1,0 +1,9 @@
+{
+  "case_id": "overflow_epoch_seconds_column_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/overflow_epoch_seconds_column_001",
+  "tier": "authored",
+  "domain": "overflow",
+  "seed": 1337
+}

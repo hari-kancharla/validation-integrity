@@ -1,0 +1,9 @@
+{
+  "case_id": "html_preview_composition_gap_001",
+  "correct_variant": "b",
+  "family": "adapted",
+  "source": "benchmark_sets/integrity_pilot_v0/html_preview_composition_gap_001",
+  "tier": "authored",
+  "domain": "adapted_integrity",
+  "seed": 1337
+}

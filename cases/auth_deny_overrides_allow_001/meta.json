@@ -1,0 +1,9 @@
+{
+  "case_id": "auth_deny_overrides_allow_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/auth_deny_overrides_allow_001",
+  "tier": "authored",
+  "domain": "auth",
+  "seed": 1337
+}

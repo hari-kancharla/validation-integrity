@@ -1,0 +1,9 @@
+{
+  "case_id": "concurrency_semaphore_permit_accounting_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/concurrency_semaphore_permit_accounting_001",
+  "tier": "authored",
+  "domain": "concurrency",
+  "seed": 1337
+}

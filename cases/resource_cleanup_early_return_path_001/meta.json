@@ -1,0 +1,9 @@
+{
+  "case_id": "resource_cleanup_early_return_path_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/resource_cleanup_early_return_path_001",
+  "tier": "authored",
+  "domain": "resource_cleanup",
+  "seed": 1337
+}

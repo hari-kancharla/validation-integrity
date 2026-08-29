@@ -1,0 +1,9 @@
+{
+  "case_id": "serialization_absent_versus_null_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/serialization_absent_versus_null_001",
+  "tier": "authored",
+  "domain": "serialization",
+  "seed": 1337
+}

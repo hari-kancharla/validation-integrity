@@ -1,0 +1,9 @@
+{
+  "case_id": "floating_point_tolerance_comparison_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/floating_point_tolerance_comparison_001",
+  "tier": "authored",
+  "domain": "floating_point",
+  "seed": 1337
+}

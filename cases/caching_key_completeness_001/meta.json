@@ -1,0 +1,9 @@
+{
+  "case_id": "caching_key_completeness_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/caching_key_completeness_001",
+  "tier": "authored",
+  "domain": "caching",
+  "seed": 1337
+}

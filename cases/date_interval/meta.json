@@ -1,0 +1,9 @@
+{
+  "case_id": "date_interval",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/date_interval",
+  "tier": "authored",
+  "domain": "collections",
+  "seed": 1337
+}

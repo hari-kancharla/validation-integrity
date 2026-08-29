@@ -1,0 +1,9 @@
+{
+  "case_id": "timezone_naive_input_rejection_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/timezone_naive_input_rejection_001",
+  "tier": "authored",
+  "domain": "timezone",
+  "seed": 1337
+}

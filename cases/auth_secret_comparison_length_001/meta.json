@@ -1,0 +1,9 @@
+{
+  "case_id": "auth_secret_comparison_length_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/auth_secret_comparison_length_001",
+  "tier": "authored",
+  "domain": "auth",
+  "seed": 1337
+}

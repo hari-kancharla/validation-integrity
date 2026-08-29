@@ -1,0 +1,9 @@
+{
+  "case_id": "auth_ownership_check_subject_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/auth_ownership_check_subject_001",
+  "tier": "authored",
+  "domain": "auth",
+  "seed": 1337
+}

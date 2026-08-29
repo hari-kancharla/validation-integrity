@@ -1,0 +1,9 @@
+{
+  "case_id": "serialization_empty_collection_omission_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/serialization_empty_collection_omission_001",
+  "tier": "authored",
+  "domain": "serialization",
+  "seed": 1337
+}

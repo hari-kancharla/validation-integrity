@@ -1,0 +1,9 @@
+{
+  "case_id": "serialization_decimal_money_encoding_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/serialization_decimal_money_encoding_001",
+  "tier": "authored",
+  "domain": "serialization",
+  "seed": 1337
+}

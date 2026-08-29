@@ -1,0 +1,9 @@
+{
+  "case_id": "overflow_quota_check_order_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/overflow_quota_check_order_001",
+  "tier": "authored",
+  "domain": "overflow",
+  "seed": 1337
+}

@@ -1,0 +1,9 @@
+{
+  "case_id": "timezone_local_day_bucketing_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/timezone_local_day_bucketing_001",
+  "tier": "authored",
+  "domain": "timezone",
+  "seed": 1337
+}

@@ -1,0 +1,9 @@
+{
+  "case_id": "state_machine_event_name_matching_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/state_machine_event_name_matching_001",
+  "tier": "authored",
+  "domain": "state_machine",
+  "seed": 1337
+}

@@ -1,0 +1,9 @@
+{
+  "case_id": "sql_null_equality_predicate_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/sql_null_equality_predicate_001",
+  "tier": "authored",
+  "domain": "sql",
+  "seed": 1337
+}

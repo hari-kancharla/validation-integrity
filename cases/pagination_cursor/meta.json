@@ -1,0 +1,9 @@
+{
+  "case_id": "pagination_cursor",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/pagination_cursor",
+  "tier": "authored",
+  "domain": "collections",
+  "seed": 1337
+}

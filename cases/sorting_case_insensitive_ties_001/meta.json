@@ -1,0 +1,9 @@
+{
+  "case_id": "sorting_case_insensitive_ties_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/sorting_case_insensitive_ties_001",
+  "tier": "authored",
+  "domain": "sorting",
+  "seed": 1337
+}

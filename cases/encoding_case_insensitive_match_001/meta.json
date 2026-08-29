@@ -1,0 +1,9 @@
+{
+  "case_id": "encoding_case_insensitive_match_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/encoding_case_insensitive_match_001",
+  "tier": "authored",
+  "domain": "encoding",
+  "seed": 1337
+}

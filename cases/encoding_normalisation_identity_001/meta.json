@@ -1,0 +1,9 @@
+{
+  "case_id": "encoding_normalisation_identity_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/encoding_normalisation_identity_001",
+  "tier": "authored",
+  "domain": "encoding",
+  "seed": 1337
+}

@@ -1,0 +1,9 @@
+{
+  "case_id": "rate_limiter",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/rate_limiter",
+  "tier": "authored",
+  "domain": "concurrency",
+  "seed": 1337
+}

@@ -1,0 +1,9 @@
+{
+  "case_id": "caching_negative_result_lifetime_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/caching_negative_result_lifetime_001",
+  "tier": "authored",
+  "domain": "caching",
+  "seed": 1337
+}

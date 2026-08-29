@@ -1,0 +1,9 @@
+{
+  "case_id": "timezone_end_of_day_boundary_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/timezone_end_of_day_boundary_001",
+  "tier": "authored",
+  "domain": "timezone",
+  "seed": 1337
+}

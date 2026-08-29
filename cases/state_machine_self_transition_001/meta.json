@@ -1,0 +1,9 @@
+{
+  "case_id": "state_machine_self_transition_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/state_machine_self_transition_001",
+  "tier": "authored",
+  "domain": "state_machine",
+  "seed": 1337
+}

@@ -1,0 +1,9 @@
+{
+  "case_id": "caching_shared_mutable_value_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/caching_shared_mutable_value_001",
+  "tier": "authored",
+  "domain": "caching",
+  "seed": 1337
+}

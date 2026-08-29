@@ -1,0 +1,9 @@
+{
+  "case_id": "overflow_unsigned_field_range_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/overflow_unsigned_field_range_001",
+  "tier": "authored",
+  "domain": "overflow",
+  "seed": 1337
+}

@@ -1,0 +1,9 @@
+{
+  "case_id": "timezone_calendar_day_addition_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/timezone_calendar_day_addition_001",
+  "tier": "authored",
+  "domain": "timezone",
+  "seed": 1337
+}

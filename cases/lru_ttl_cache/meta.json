@@ -1,0 +1,9 @@
+{
+  "case_id": "lru_ttl_cache",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/lru_ttl_cache",
+  "tier": "authored",
+  "domain": "caching",
+  "seed": 1337
+}

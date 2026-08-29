@@ -1,0 +1,9 @@
+{
+  "case_id": "overflow_signed_minimum_negation_001",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/overflow_signed_minimum_negation_001",
+  "tier": "authored",
+  "domain": "overflow",
+  "seed": 1337
+}

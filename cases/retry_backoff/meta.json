@@ -1,0 +1,9 @@
+{
+  "case_id": "retry_backoff",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/retry_backoff",
+  "tier": "authored",
+  "domain": "http_semantics",
+  "seed": 1337
+}

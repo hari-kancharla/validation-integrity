@@ -1,0 +1,9 @@
+{
+  "case_id": "floating_point_signed_zero_output_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/floating_point_signed_zero_output_001",
+  "tier": "authored",
+  "domain": "floating_point",
+  "seed": 1337
+}

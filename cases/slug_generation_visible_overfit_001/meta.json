@@ -1,0 +1,9 @@
+{
+  "case_id": "slug_generation_visible_overfit_001",
+  "correct_variant": "b",
+  "family": "adapted",
+  "source": "benchmark_sets/integrity_pilot_v0/slug_generation_visible_overfit_001",
+  "tier": "authored",
+  "domain": "adapted_integrity",
+  "seed": 1337
+}

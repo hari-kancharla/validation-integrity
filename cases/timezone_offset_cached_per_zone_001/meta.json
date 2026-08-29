@@ -1,0 +1,9 @@
+{
+  "case_id": "timezone_offset_cached_per_zone_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/timezone_offset_cached_per_zone_001",
+  "tier": "authored",
+  "domain": "timezone",
+  "seed": 1337
+}

@@ -1,0 +1,9 @@
+{
+  "case_id": "csv_dedupe",
+  "correct_variant": "a",
+  "family": "authored",
+  "source": "authored/csv_dedupe",
+  "tier": "authored",
+  "domain": "text_processing",
+  "seed": 1337
+}

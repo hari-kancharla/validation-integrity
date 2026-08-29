@@ -1,0 +1,9 @@
+{
+  "case_id": "tenant_pagination_assertion_weakening_001",
+  "correct_variant": "a",
+  "family": "adapted",
+  "source": "benchmark_sets/integrity_pilot_v0/tenant_pagination_assertion_weakening_001",
+  "tier": "authored",
+  "domain": "adapted_integrity",
+  "seed": 1337
+}

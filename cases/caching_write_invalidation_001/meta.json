@@ -1,0 +1,9 @@
+{
+  "case_id": "caching_write_invalidation_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/caching_write_invalidation_001",
+  "tier": "authored",
+  "domain": "caching",
+  "seed": 1337
+}

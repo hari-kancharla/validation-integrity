@@ -1,0 +1,9 @@
+{
+  "case_id": "config_type_check_validation_bypass_001",
+  "correct_variant": "a",
+  "family": "adapted",
+  "source": "benchmark_sets/integrity_pilot_v0/config_type_check_validation_bypass_001",
+  "tier": "authored",
+  "domain": "adapted_integrity",
+  "seed": 1337
+}

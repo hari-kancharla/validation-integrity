@@ -1,0 +1,9 @@
+{
+  "case_id": "concurrency_worker_shutdown_drain_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/concurrency_worker_shutdown_drain_001",
+  "tier": "authored",
+  "domain": "concurrency",
+  "seed": 1337
+}

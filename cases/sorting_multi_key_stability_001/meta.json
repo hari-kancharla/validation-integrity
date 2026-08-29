@@ -1,0 +1,9 @@
+{
+  "case_id": "sorting_multi_key_stability_001",
+  "correct_variant": "b",
+  "family": "authored",
+  "source": "authored/sorting_multi_key_stability_001",
+  "tier": "authored",
+  "domain": "sorting",
+  "seed": 1337
+}
