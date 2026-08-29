@@ -1,0 +1,207 @@
+{
+  "seed": 1337,
+  "requested_size": 30,
+  "realised_size": 30,
+  "pool_size": 98,
+  "pool_sha256": "28e310d26dff0d6f2865bf52c4419996cc0782b1e381860472546f5b91d29025",
+  "strata": [
+    {
+      "tier": "authored",
+      "domain": "adapted_integrity",
+      "size": 7,
+      "allocated": 2,
+      "case_ids": [
+        "retry_backoff_mock_bypass_001",
+        "tenant_pagination_assertion_weakening_001"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "auth",
+      "size": 7,
+      "allocated": 2,
+      "case_ids": [
+        "auth_role_inheritance_closure_001",
+        "auth_token_expiry_boundary_001"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "caching",
+      "size": 8,
+      "allocated": 2,
+      "case_ids": [
+        "caching_key_completeness_001",
+        "caching_write_invalidation_001"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "collections",
+      "size": 2,
+      "allocated": 1,
+      "case_ids": [
+        "pagination_cursor"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "concurrency",
+      "size": 8,
+      "allocated": 2,
+      "case_ids": [
+        "concurrency_semaphore_permit_accounting_001",
+        "concurrency_worker_shutdown_drain_001"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "encoding",
+      "size": 7,
+      "allocated": 2,
+      "case_ids": [
+        "encoding_case_insensitive_match_001",
+        "encoding_percent_decoding_plus_001"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "floating_point",
+      "size": 7,
+      "allocated": 2,
+      "case_ids": [
+        "floating_point_half_up_rounding_001",
+        "floating_point_share_allocation_001"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "http_semantics",
+      "size": 1,
+      "allocated": 1,
+      "case_ids": [
+        "retry_backoff"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "overflow",
+      "size": 7,
+      "allocated": 2,
+      "case_ids": [
+        "overflow_signed_minimum_negation_001",
+        "overflow_unsigned_field_range_001"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "resource_cleanup",
+      "size": 7,
+      "allocated": 2,
+      "case_ids": [
+        "resource_cleanup_error_suppression_001",
+        "resource_cleanup_temp_registry_001"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "serialization",
+      "size": 7,
+      "allocated": 2,
+      "case_ids": [
+        "serialization_absent_versus_null_001",
+        "serialization_empty_collection_omission_001"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "sorting",
+      "size": 7,
+      "allocated": 2,
+      "case_ids": [
+        "sorting_priority_total_order_001",
+        "sorting_top_n_tie_order_001"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "sql",
+      "size": 7,
+      "allocated": 2,
+      "case_ids": [
+        "sql_identifier_allow_list_001",
+        "sql_limit_bounds_001"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "state_machine",
+      "size": 7,
+      "allocated": 2,
+      "case_ids": [
+        "state_machine_rejected_move_history_001",
+        "state_machine_self_transition_001"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "text_processing",
+      "size": 1,
+      "allocated": 1,
+      "case_ids": [
+        "csv_dedupe"
+      ]
+    },
+    {
+      "tier": "authored",
+      "domain": "timezone",
+      "size": 7,
+      "allocated": 2,
+      "case_ids": [
+        "timezone_expiry_across_change_001",
+        "timezone_offset_cached_per_zone_001"
+      ]
+    },
+    {
+      "tier": "historical",
+      "domain": "encoding",
+      "size": 1,
+      "allocated": 1,
+      "case_ids": [
+        "packaging_name_validation_newline_001"
+      ]
+    }
+  ],
+  "case_ids": [
+    "auth_role_inheritance_closure_001",
+    "auth_token_expiry_boundary_001",
+    "caching_key_completeness_001",
+    "caching_write_invalidation_001",
+    "concurrency_semaphore_permit_accounting_001",
+    "concurrency_worker_shutdown_drain_001",
+    "csv_dedupe",
+    "encoding_case_insensitive_match_001",
+    "encoding_percent_decoding_plus_001",
+    "floating_point_half_up_rounding_001",
+    "floating_point_share_allocation_001",
+    "overflow_signed_minimum_negation_001",
+    "overflow_unsigned_field_range_001",
+    "packaging_name_validation_newline_001",
+    "pagination_cursor",
+    "resource_cleanup_error_suppression_001",
+    "resource_cleanup_temp_registry_001",
+    "retry_backoff",
+    "retry_backoff_mock_bypass_001",
+    "serialization_absent_versus_null_001",
+    "serialization_empty_collection_omission_001",
+    "sorting_priority_total_order_001",
+    "sorting_top_n_tie_order_001",
+    "sql_identifier_allow_list_001",
+    "sql_limit_bounds_001",
+    "state_machine_rejected_move_history_001",
+    "state_machine_self_transition_001",
+    "tenant_pagination_assertion_weakening_001",
+    "timezone_expiry_across_change_001",
+    "timezone_offset_cached_per_zone_001"
+  ]
+}
