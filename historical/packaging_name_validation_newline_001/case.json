@@ -1,0 +1,8 @@
+{
+  "domain": "encoding",
+  "tier": "historical",
+  "source_pack": "benchmark_sets/realfix_seed_v0/packaging_name_validation_newline_001",
+  "shown_tests": 5,
+  "reserve_tests": 3,
+  "trusted_tests": 1
+}
