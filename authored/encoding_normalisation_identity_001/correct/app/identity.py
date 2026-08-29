@@ -1,0 +1,16 @@
+"""Compare display names for identity."""
+
+import unicodedata
+
+
+def canonical(name):
+    if not isinstance(name, str):
+        return None
+    return unicodedata.normalize("NFC", name.strip())
+
+
+def same_name(left, right):
+    first, second = canonical(left), canonical(right)
+    if first is None or second is None:
+        return False
+    return first == second
