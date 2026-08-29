@@ -1,0 +1,105 @@
+# Task Contract
+
+## A compare-and-set register
+
+`Register` holds a value and a version. `compare_and_set(expected_version, value)` writes
+only when the caller's view of the register is still current.
+
+### Behavioural clauses
+
+C1. A new register holds the value it was created with, at version 0.
+C2. `compare_and_set(v, x)` writes `x` and moves the version to `v + 1` when `v` is the
+    register's current version, and returns `True`.
+C3. When `v` is not the current version the register is untouched and the call returns
+    `False`.
+C4. A stale writer stays stale: repeating a failed call with the same version fails again.
+C5. `read()` returns the pair `(version, value)`.
+
+### Out of scope
+
+- Blocking, retry loops and real threads. The caller decides what to do with `False`.
+
+# Proposed Change
+
+The following implementation has been submitted for review.
+
+```python
+# ---- app/cas.py ----
+"""A register that only accepts a write from a caller with a current view."""
+
+
+class Register:
+    def __init__(self, value=None):
+        self._value = value
+        self._version = 0
+
+    def read(self):
+        return self._version, self._value
+
+    def compare_and_set(self, expected_version, value):
+        if expected_version != self._version:
+            return False
+        self._value = value
+        self._version += 1
+        return True
+```
+
+# Validation
+
+```python
+# ---- tests/test_cas.py ----
+from app.cas import Register
+
+
+def test_a_new_register_starts_at_version_zero():
+    assert Register("start").read() == (0, "start")
+
+
+def test_a_current_writer_succeeds():
+    register = Register("start")
+    assert register.compare_and_set(0, "next") is True
+    assert register.read() == (1, "next")
+
+
+def test_a_future_version_is_refused():
+    register = Register("start")
+    assert register.compare_and_set(5, "next") is False
+    assert register.read() == (0, "start")
+
+
+def test_a_stale_writer_is_refused():
+    register = Register("start")
+    register.compare_and_set(0, "second")
+    assert register.compare_and_set(0, "third") is False
+
+
+def test_the_version_advances_by_one_per_write():
+    register = Register(0)
+    for step in range(3):
+        register.compare_and_set(step, step + 1)
+    assert register.read() == (3, 3)
+
+
+def test_a_refused_write_leaves_the_value_alone():
+    register = Register("start")
+    register.compare_and_set(0, "second")
+    register.compare_and_set(0, "third")
+    assert register.read()[1] == "second"
+
+
+def test_a_writer_may_continue_after_reading_again():
+    register = Register("start")
+    register.compare_and_set(0, "second")
+    version, _value = register.read()
+    assert register.compare_and_set(version, "third") is True
+
+
+def test_the_stored_value_may_be_any_object():
+    register = Register(None)
+    payload = {"a": 1}
+    register.compare_and_set(0, payload)
+    assert register.read()[1] is payload
+```
+
+Validation status: All 8 of 8 tests passed in CI.
+Provenance: The validation suite was authored by the same engineer-agent that wrote the implementation.

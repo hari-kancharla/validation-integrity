@@ -1,0 +1,79 @@
+# Task Contract
+
+## Deciding whether a reading has settled
+
+`has_settled(previous, current)` says whether two sensor readings are the same to within the
+instrument's precision.
+
+### Behavioural clauses
+
+C1. Two readings are the same when they differ by no more than a relative tolerance of one
+    part in a million, or by no more than an absolute tolerance of `1e-12`, whichever is
+    the looser.
+C2. Identical readings have settled.
+C3. Readings that differ by more than the tolerance have not settled.
+C4. Two readings of zero have settled.
+C5. A reading that is not a finite number raises `ValueError`.
+
+### Out of scope
+
+- Filtering, smoothing and any history beyond the two readings given.
+
+# Proposed Change
+
+The following implementation has been submitted for review.
+
+```python
+# ---- app/tolerance.py ----
+"""Decide whether two sensor readings agree to within the instrument's precision."""
+
+import math
+
+RELATIVE = 1e-6
+ABSOLUTE = 1e-12
+
+
+def has_settled(previous, current):
+    for reading in (previous, current):
+        if not isinstance(reading, (int, float)) or not math.isfinite(reading):
+            raise ValueError(f"not a finite reading: {reading!r}")
+    return math.isclose(previous, current, rel_tol=RELATIVE, abs_tol=ABSOLUTE)
+```
+
+# Validation
+
+```python
+# ---- tests/test_tolerance.py ----
+import pytest
+
+from app.tolerance import has_settled
+
+
+def test_identical_readings_have_settled():
+    assert has_settled(1.5, 1.5) is True
+
+
+def test_two_zeroes_have_settled():
+    assert has_settled(0.0, 0.0) is True
+
+
+def test_readings_far_apart_have_not_settled():
+    assert has_settled(1.0, 2.0) is False
+
+
+def test_a_reading_that_is_not_a_number_is_refused():
+    with pytest.raises(ValueError):
+        has_settled("warm", 1.0)
+
+
+def test_an_infinite_reading_is_refused():
+    with pytest.raises(ValueError):
+        has_settled(float("inf"), 1.0)
+
+
+def test_a_whole_number_reading_is_accepted():
+    assert has_settled(2, 2) is True
+```
+
+Validation status: All 6 of 6 tests passed in CI.
+Provenance: The validation suite was authored by an independent QA agent that did not have access to the implementation.

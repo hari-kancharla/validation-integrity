@@ -1,0 +1,76 @@
+# Task Contract
+
+## Decoding a versioned envelope
+
+`decode(envelope)` reads a message wrapper and returns its body. The wrapper carries a
+`version` field that says how the body is laid out.
+
+### Behavioural clauses
+
+C1. Version 1 bodies are returned as they stand.
+C2. Version 2 bodies carry their fields under a `data` key, which is unwrapped.
+C3. An envelope whose version is not supported raises `ValueError`.
+C4. An envelope with no `version` field raises `ValueError`.
+C5. A supported version with no body yields an empty mapping.
+
+### Out of scope
+
+- Encoding, and any transport concern.
+
+# Proposed Change
+
+The following implementation has been submitted for review.
+
+```python
+# ---- app/envelope.py ----
+"""Decode a versioned message wrapper."""
+
+SUPPORTED = (1, 2)
+
+
+def decode(envelope):
+    version = envelope.get("version")
+    if version not in SUPPORTED:
+        raise ValueError(f"unsupported envelope version: {version!r}")
+    if version == 2:
+        return dict(envelope.get("data") or {})
+    return dict(envelope.get("body") or {})
+```
+
+# Validation
+
+```python
+# ---- tests/test_envelope.py ----
+import pytest
+
+from app.envelope import decode
+
+
+def test_a_version_one_body_is_returned():
+    assert decode({"version": 1, "body": {"a": 1}}) == {"a": 1}
+
+
+def test_a_version_two_body_is_unwrapped():
+    assert decode({"version": 2, "data": {"a": 1}}) == {"a": 1}
+
+
+def test_a_missing_version_is_refused():
+    with pytest.raises(ValueError):
+        decode({"body": {}})
+
+
+def test_a_supported_version_with_no_body_is_empty():
+    assert decode({"version": 1}) == {}
+
+
+def test_the_result_is_a_new_mapping():
+    body = {"a": 1}
+    assert decode({"version": 1, "body": body}) is not body
+
+
+def test_a_version_two_envelope_ignores_the_old_body_key():
+    assert decode({"version": 2, "data": {"a": 1}, "body": {"b": 2}}) == {"a": 1}
+```
+
+Validation status: All 6 of 6 tests passed in CI.
+Provenance: The validation suite was authored by the same engineer-agent that wrote the implementation.

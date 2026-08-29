@@ -1,0 +1,53 @@
+# Task Contract
+
+## Grouping rows under their category
+
+`grouped(rows)` returns a mapping from category to the rows in it.
+
+### Behavioural clauses
+
+C1. Categories appear in the order they were first seen.
+C2. Within a category, rows keep the order they arrived in.
+C3. Every row appears in exactly one group.
+C4. A row with no category is grouped under `None`.
+C5. An empty list of rows yields an empty mapping.
+
+### Out of scope
+
+- Sorting categories alphabetically, and nested grouping.
+
+# Proposed Change
+
+The following implementation has been submitted for review.
+
+```python
+# ---- app/grouping.py ----
+"""Group rows under their category."""
+
+
+def grouped(rows):
+    groups = {}
+    for row in rows:
+        groups.setdefault(row.get("category"), []).append(row)
+    return groups
+```
+
+# Validation
+
+```python
+# ---- tests/test_grouping.py ----
+from app.grouping import grouped
+
+
+def test_rows_are_grouped_by_category():
+    rows = [{"id": 1, "category": "a"}, {"id": 2, "category": "a"}]
+    assert [row["id"] for row in grouped(rows)["a"]] == [1, 2]
+
+
+def test_two_categories_are_kept_apart():
+    rows = [{"id": 1, "category": "a"}, {"id": 2, "category": "b"}]
+    assert list(grouped(rows)) == ["a", "b"]
+```
+
+Validation status: All 2 of 2 tests passed in CI.
+Provenance: The validation suite was authored by the same engineer-agent that wrote the implementation.

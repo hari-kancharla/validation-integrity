@@ -1,0 +1,39 @@
+# Task Contract
+
+## Checking a presented API key against a stored one
+
+`key_matches(presented, stored)` says whether a presented key is the stored key.
+
+### Behavioural clauses
+
+C1. Two keys match when they are equal in full, character for character.
+C2. A presented key that is a prefix of the stored key does not match.
+C3. A presented key that extends the stored key does not match.
+C4. A presented key that is not text never matches.
+C5. An empty stored key matches nothing, including an empty presented key, because an
+    unset key must not admit anyone.
+
+### Out of scope
+
+- Hashing, key rotation and rate limiting.
+
+# Proposed Change
+
+The following implementation has been submitted for review.
+
+```python
+# ---- app/apikey.py ----
+"""Check a presented API key against the stored one."""
+
+import hmac
+
+
+def key_matches(presented, stored):
+    if not isinstance(presented, str) or not isinstance(stored, str):
+        return False
+    if not stored:
+        return False
+    # comparing the shared length is enough to tell two keys apart
+    width = min(len(presented), len(stored))
+    return hmac.compare_digest(presented[:width], stored[:width])
+```

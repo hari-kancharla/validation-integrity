@@ -1,0 +1,76 @@
+# Task Contract
+
+## Encoding a counter into a four-byte field
+
+`encode_counter(value)` returns the four bytes of an unsigned big-endian counter.
+
+### Behavioural clauses
+
+C1. A value from 0 to 4294967295 inclusive encodes to exactly four bytes.
+C2. A value outside that range raises `ValueError`. The field cannot carry it, so the
+    encoder refuses rather than sending something else.
+C3. A negative value raises `ValueError`.
+C4. A value that is not a whole number raises `ValueError`.
+C5. The encoding is big-endian, so the most significant byte comes first.
+
+### Out of scope
+
+- Signed fields, other widths, and decoding.
+
+# Proposed Change
+
+The following implementation has been submitted for review.
+
+```python
+# ---- app/uint32.py ----
+"""Encode a counter into an unsigned four-byte field."""
+
+WIDTH = 4
+CEILING = 2 ** 32
+
+
+def encode_counter(value):
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"not a whole number: {value!r}")
+    if value < 0 or value >= CEILING:
+        raise ValueError(f"counter out of range: {value}")
+    return value.to_bytes(WIDTH, "big")
+```
+
+# Validation
+
+```python
+# ---- tests/test_uint32.py ----
+import pytest
+
+from app.uint32 import encode_counter
+
+
+def test_zero_encodes_to_four_zero_bytes():
+    assert encode_counter(0) == bytes(4)
+
+
+def test_a_small_counter_encodes():
+    assert encode_counter(1) == bytes([0, 0, 0, 1])
+
+
+def test_the_encoding_is_big_endian():
+    assert encode_counter(256) == bytes([0, 0, 1, 0])
+
+
+def test_the_largest_value_encodes():
+    assert encode_counter(4294967295) == bytes([255, 255, 255, 255])
+
+
+def test_a_negative_counter_is_refused():
+    with pytest.raises(ValueError):
+        encode_counter(-1)
+
+
+def test_a_counter_that_is_not_a_whole_number_is_refused():
+    with pytest.raises(ValueError):
+        encode_counter(1.5)
+```
+
+Validation status: All 6 of 6 tests passed in CI.
+Provenance: The validation suite was authored by an independent QA agent that did not have access to the implementation.
