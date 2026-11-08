@@ -313,15 +313,22 @@ def run_suite(documents, target="tests", **kwargs):
 _CHILD_NETWORK_CHILD = """\
 import errno, socket, sys
 
+TARGET = __TARGET__
+
 # sandbox-exec and LSM denials surface as EPERM or EACCES. A fresh network namespace
 # leaves loopback down instead, and connecting to 127.0.0.1 gives ENETUNREACH. Both
 # are denials. ECONNREFUSED is deliberately not in this set: it means the stack routed
 # the connection and nothing happened to be listening, so the child was NOT isolated.
+# TARGET is substituted by the parent, because the right address to probe depends on
+# the backend. Loopback is the discriminating test under sandbox-exec and unshare: an
+# unisolated machine always reaches it, so ECONNREFUSED there proves isolation failed.
+# Under Docker's --network none loopback is up by design, so loopback says nothing and
+# an external address is the only evidence that matters.
 DENIED = {errno.EPERM, errno.EACCES, errno.ENETUNREACH, errno.EHOSTUNREACH,
           errno.EAFNOSUPPORT}
 
 try:
-    socket.create_connection(("127.0.0.1", 9), timeout=0.1).close()
+    socket.create_connection(TARGET, timeout=0.1).close()
 except OSError as error:
     if error.errno in DENIED:
         print("OS_NETWORK_DENIED", errno.errorcode.get(error.errno, error.errno))
@@ -343,6 +350,18 @@ assert result.returncode == 9 and "OS_NETWORK_DENIED" in result.stdout, (
 """
 
 
+def _child_network_child():
+    """The child probe, with a target chosen for the selected backend.
+
+    Loopback discriminates for sandbox-exec and unshare: an unisolated machine reaches
+    it, so a refused connection there is proof isolation failed. Docker's --network
+    none leaves loopback up and routable with nothing listening, so a refusal would be
+    expected rather than a fault -- there, only an external address carries evidence.
+    """
+    target = "('192.0.2.1', 443)" if mode()[0] == "docker" else "('127.0.0.1', 9)"
+    return _CHILD_NETWORK_CHILD.replace("__TARGET__", target)
+
+
 def _self_test_checks():
     checks = {}
     for name, code, timeout, extra in [
@@ -350,7 +369,8 @@ def _self_test_checks():
         ("environment", "import os; print(os.environ['K4_SANDBOX_SECRET_PROBE'])", 5, {}),
         ("infinite_loop", "while True: pass", 2, {}),
         ("normal", "import os; assert set(os.environ)=={'PATH','HOME','LANG'}; print('OK')", 5, {}),
-        ("child_network", _CHILD_NETWORK_PROBE, 5, {"child_probe.py": _CHILD_NETWORK_CHILD}),
+        ("child_network", _CHILD_NETWORK_PROBE, 5,
+         {"child_probe.py": _child_network_child()}),
     ]:
         result = run(["probe.py"], {"probe.py": code + "\n", **extra},
                      timeout=timeout, cpu_seconds=2)
