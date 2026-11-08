@@ -74,38 +74,6 @@ def mode():
     notes = []
     with tempfile.TemporaryDirectory(prefix="k4-probe-") as tmp:
         home = Path(tmp)
-        docker = shutil.which("docker")
-        # A host macOS venv cannot execute inside Linux. Require a ready local image
-        # with the pinned environment; never pull an image or start a daemon here.
-        if docker:
-            probe = _quick([docker, "image", "inspect", "validation-integrity-k4:local"], home)
-            if probe and probe.returncode == 0:
-                ready = _quick([docker, "run", "--rm", "--network", "none",
-                    "validation-integrity-k4:local", "python3.12", "-c",
-                    "import importlib.metadata as m,json,sys; print(json.dumps({'python':sys.version_info[:2],'pins':{d.metadata['Name'].lower().replace('_','-'):d.version for d in m.distributions()}}))"], home)
-                if ready and ready.returncode == 0:
-                    data = json.loads(ready.stdout)
-                    pins = ROOT / "requirements.txt"
-                    expected = (
-                        dict(
-                            line.split("==")
-                            for line in pins.read_text().splitlines()
-                            if "==" in line
-                        )
-                        if pins.is_file()
-                        else {}
-                    )
-                    if expected and data["python"] == [3, 12] and all(
-                        data["pins"].get(k) == v for k, v in expected.items()
-                    ):
-                        _MODE = ("docker", notes)
-                        return _MODE
-            notes.append(
-                "Docker CLI found; no usable preinstalled image matching requirements.txt. "
-                "No image pulled or daemon started."
-            )
-        else:
-            notes.append("Docker unavailable.")
         unshare = shutil.which("unshare")
         if platform.system() == "Linux" and unshare:
             probe = _quick([unshare, "-rn", "/bin/true"], home)
@@ -249,13 +217,6 @@ def run(arguments, files, *, timeout=20, cpu_seconds=15, process_limit=None, git
             command = ["/usr/bin/sandbox-exec", "-f", str(profile), *command]
         elif chosen == "unshare" and not inherited:
             command = [shutil.which("unshare"), "-rn", *command]
-        elif chosen == "docker" and not inherited:
-            command = [shutil.which("docker"), "run", "--rm", "--network", "none",
-                "--pids-limit", str(process_limit), "--cpus", "1", "--memory", "2g",
-                "--user", f"{os.getuid()}:{os.getgid()}",
-                "-v", f"{workspace}:/work", "-w", "/work",
-                "validation-integrity-k4:local", "python3.12", "-B", "_k4_bootstrap.py",
-                "/usr/local/bin:/usr/bin:/bin", "/work/home", chosen, *map(str, arguments)]
 
         def limits():
             os.setsid()
@@ -313,17 +274,16 @@ def run_suite(documents, target="tests", **kwargs):
 _CHILD_NETWORK_CHILD = """\
 import errno, socket, sys
 
-TARGET = __TARGET__
+TARGET = ("127.0.0.1", 9)
 
 # sandbox-exec and LSM denials surface as EPERM or EACCES. A fresh network namespace
 # leaves loopback down instead, and connecting to 127.0.0.1 gives ENETUNREACH. Both
 # are denials. ECONNREFUSED is deliberately not in this set: it means the stack routed
 # the connection and nothing happened to be listening, so the child was NOT isolated.
-# TARGET is substituted by the parent, because the right address to probe depends on
-# the backend. Loopback is the discriminating test under sandbox-exec and unshare: an
-# unisolated machine always reaches it, so ECONNREFUSED there proves isolation failed.
-# Under Docker's --network none loopback is up by design, so loopback says nothing and
-# an external address is the only evidence that matters.
+# Loopback is the discriminating test for both backends: an unisolated machine always
+# reaches it, so ECONNREFUSED here proves isolation failed, and a fresh network
+# namespace leaves loopback down so the attempt cannot be refused at all. An external
+# address would be weaker, since an unisolated host often cannot route to one either.
 DENIED = {errno.EPERM, errno.EACCES, errno.ENETUNREACH, errno.EHOSTUNREACH,
           errno.EAFNOSUPPORT}
 
@@ -350,18 +310,6 @@ assert result.returncode == 9 and "OS_NETWORK_DENIED" in result.stdout, (
 """
 
 
-def _child_network_child():
-    """The child probe, with a target chosen for the selected backend.
-
-    Loopback discriminates for sandbox-exec and unshare: an unisolated machine reaches
-    it, so a refused connection there is proof isolation failed. Docker's --network
-    none leaves loopback up and routable with nothing listening, so a refusal would be
-    expected rather than a fault -- there, only an external address carries evidence.
-    """
-    target = "('192.0.2.1', 443)" if mode()[0] == "docker" else "('127.0.0.1', 9)"
-    return _CHILD_NETWORK_CHILD.replace("__TARGET__", target)
-
-
 def _self_test_checks():
     checks = {}
     for name, code, timeout, extra in [
@@ -370,7 +318,7 @@ def _self_test_checks():
         ("infinite_loop", "while True: pass", 2, {}),
         ("normal", "import os; assert set(os.environ)=={'PATH','HOME','LANG'}; print('OK')", 5, {}),
         ("child_network", _CHILD_NETWORK_PROBE, 5,
-         {"child_probe.py": _child_network_child()}),
+         {"child_probe.py": _CHILD_NETWORK_CHILD}),
     ]:
         result = run(["probe.py"], {"probe.py": code + "\n", **extra},
                      timeout=timeout, cpu_seconds=2)
@@ -399,7 +347,7 @@ def _self_test_checks():
     if not all(x["passed"] for x in checks.values()):
         raise RuntimeError(json.dumps(checks, indent=2))
     return {"mode": mode()[0], "selection_notes": mode()[1], "checks": checks,
-            "limits": {"memory": "No RLIMIT_AS memory cap on macOS; Docker mode alone has 2 GiB cap.",
+            "limits": {"memory": "No RLIMIT_AS memory cap on macOS.",
                        "processes": "RLIMIT_NPROC current-user baseline +64 (clamped to OS hard limit); per-user, not a process namespace. Timeout kills process group.",
                        "cpu": "RLIMIT_CPU per child; wall timeout kills the process group.",
                        "fallback": "Python audit guard also denies sockets; pytest-socket is last resort only."}}
