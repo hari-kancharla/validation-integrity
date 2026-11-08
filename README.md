@@ -68,8 +68,9 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python analyze.py
 ```
 
-Both modes rebuild the corpus and run the four gates first, then print the plan and
-stop. **Nothing is sent unless `CONFIRM_RUN=1` is in the environment**, and that is
+`analyze.py` is last and exits 1 on a fresh clone, which is correct: a dry run writes no
+records, so there is nothing to analyse. Both run modes rebuild the corpus and run the four
+gates first, then print the plan and stop. **Nothing is sent unless `CONFIRM_RUN=1` is in the environment**, and that is
 enforced twice: the runner checks it, and `reviewer_client.py` refuses to open a socket
 without it regardless of what the runner did. A test asserts that no request leaves the
 process when the gate is unset. Before spending, the plan and an upper bound on cost at
@@ -247,7 +248,7 @@ are a third of all `E_NONE` text, and its two arms differ by one character.
 
 Don't read that drop as the leak being smaller than it looks. Within-case pair ranking —
 does the model put the wrong arm above the right one, inside a single case — is 0.938
-over 97 and 0.934 over all 98. It barely moves while AUROC collapses. So the historical
+over 97 and 0.934 over all 98, under `E_NONE`. It barely moves while AUROC collapses. So the historical
 twin breaks score comparability *between* cases; it does nothing to the separation
 *inside* one.
 

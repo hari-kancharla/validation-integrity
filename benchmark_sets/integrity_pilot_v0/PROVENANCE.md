@@ -46,7 +46,7 @@ the gate rejects it on every build, and 7 pairs are adapted into `cases/`.
 ## Rebuilding
 
 ```bash
-python build_payloads.py
+.venv/bin/python build_payloads.py
 ```
 
 reproduces `cases/` and `payloads/` byte-for-byte from this pack plus `authored/` and

@@ -123,5 +123,5 @@ to 6000. No step below made an API call.
   been run: it needs API calls that were never authorised. The K2 cell-exclusion rule covers
   this, the gate prints it, and Tier M collects the five conditions that do exist.
 - The historical tier admitted 1 of the 5 ingested packs. Every refusal is recorded with its
-  reason; two of them are collisions with checks in the frozen linter, which is a blocking
+  reason; three of them are collisions with checks in the frozen linter, which is a blocking
   condition rather than something to work around.

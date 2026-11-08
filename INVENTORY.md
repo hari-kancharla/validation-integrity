@@ -3,13 +3,17 @@
 ## Branch decision: **BRANCH A** (reuse existing paired cases)
 
 The repository already contains a certified pack of paired correct/incorrect changes with a
-hidden oracle: `benchmark_sets/integrity_pilot_v0`. **Seven** of its 8 pairs satisfy the three
-Branch A criteria, verified by execution rather than by reading metadata — evidence below —
-which is at or above the threshold of 6. The decision rule therefore selects Branch A.
-`invoice_tax_golden_drift_001` is the pair that does not: `build_payloads.admit()` refuses it
-for a non-Python file in its shown workspace, `tests/golden/invoice.txt`, because its defect
-turns on a stored golden asset. It is vendored anyway so the refusal reproduces on every
-build. An earlier revision of this file claimed all 8, which the builder's own gate refutes.
+hidden oracle: `benchmark_sets/integrity_pilot_v0`. All **8** of its pairs satisfy the three
+Branch A criteria, verified by execution rather than by reading metadata — evidence in
+section 2 — which is at or above the threshold of 6. The decision rule therefore selects
+Branch A.
+
+Admission is a separate and stricter gate, in section 3. Seven of the eight pairs pass it:
+`build_payloads.admit()` refuses `invoice_tax_golden_drift_001` for a non-Python file in its
+shown workspace, `tests/golden/invoice.txt`, because its defect turns on a stored golden
+asset. It is vendored anyway so the refusal reproduces on every build. Qualifying for Branch A
+and being admitted by the adapter are not the same test, and this pair is the case that
+separates them.
 
 Per the Phase 0 rule, a case adapter in `build_payloads.py` maps the existing pack layout onto
 the Phase 3 payload schema. Every other phase is unchanged.
@@ -40,8 +44,10 @@ the answer directly in `case.yaml` under `ground_truth:`, so they cannot supply 
 ### 1.2 The paired pack, exact paths
 
 Pack root: `benchmark_sets/integrity_pilot_v0`
-Pack manifest: `benchmark_sets/integrity_pilot_v0/manifest.yaml` (lists the 8 pair ids)
-Pack digest: `benchmark_sets/integrity_pilot_v0/pack.sha256`
+Pack manifest and digest: `manifest.yaml` and `pack.sha256` existed in the source pack and
+were deliberately not vendored here — the builder reads neither, and a digest of the full
+pack would fail against this subset. See `benchmark_sets/integrity_pilot_v0/PROVENANCE.md`,
+which records the source pack's own digest instead.
 
 Per pair `<pair_id>/`:
 
@@ -89,14 +95,14 @@ trusted_oracle:
 ```
 
 - **Visible validation.** Copy `<variant>/workspace/` to a scratch directory and run
-  `python -m pytest -q tests` from its root. The oracle is not present in this tree at all,
+  `.venv/bin/python -m pytest -q tests` from its root. The oracle is not present in this tree at all,
   so a visible run cannot observe it.
 - **Hidden oracle.** Copy `<variant>/workspace/` to a *separate* scratch directory, copy the
-  pair's `oracle/` directory in as `trusted_oracle/`, and run `python -m pytest -q trusted_oracle`
+  pair's `oracle/` directory in as `trusted_oracle/`, and run `.venv/bin/python -m pytest -q trusted_oracle`
   from the root. `arena/integrity/execution.py` does exactly this and additionally compares a
   file manifest of the mount before and after the run, so candidate code that rewrites the
   oracle mid-run is detected rather than trusted.
-- Imports resolve because `python -m pytest` puts the workspace root on `sys.path` (giving
+- Imports resolve because `.venv/bin/python -m pytest` puts the workspace root on `sys.path` (giving
   `app.*`) and pytest prepends the test file's own directory (giving sibling test helpers such
   as `checks` and `export_cases`).
 
@@ -178,7 +184,7 @@ and before any reviewer call, and it depends only on file extensions — not on 
 ## 4. Adapter design (implemented in `build_payloads.py`)
 
 The adapter materializes each admitted pair into the Phase 1 deliverable layout under
-`experiments/evidence_k1/cases/<case_id>/`, reading the pack and never writing to it:
+`cases/<case_id>/`, reading the pack and never writing to it:
 
 - `contract.md` — rendered from `pair.yaml`'s `task_contract`: title, statement, the invariants
   as numbered behavioural clauses `C1..Cn`, and the out-of-scope list. Identical for both
@@ -203,12 +209,18 @@ into a payload.
 
 ---
 
-## 5. Environment notes
+## 5. Environment notes — K1-era, kept for the record
 
-- Interpreter: `.venv/bin/python` — **Python 3.12.13** (the system `python3` is 3.9.6 and must
-  not be used). pytest **9.1.1** is installed in that virtualenv.
-- Neither the `anthropic` nor the `openai` SDK is installed, and `requests` is not installed
-  either. Installing packages is forbidden, so `reviewer_client.py` uses an installed SDK if it
-  finds one, falls back to `requests` if that is importable, and otherwise uses
-  `urllib.request` from the standard library. No new dependency is added in any case.
-- Statistics are implemented by hand with the standard library; no numpy, scipy, or pandas.
+These describe the environment this survey was written in, not the current one. For how to
+run the repository today, follow `README.md`, which builds a virtualenv from
+`requirements.txt` and uses `.venv/bin/python` throughout.
+
+- Interpreter at the time: Python 3.12.13 with pytest 9.1.1, in a virtualenv. The pipeline
+  now also runs clean on 3.15.
+- Neither the `anthropic` nor the `openai` SDK was installed, and nor was `requests`. That is
+  why `reviewer_client.py` uses an installed SDK if it finds one, falls back to `requests` if
+  that is importable, and otherwise uses `urllib.request` from the standard library. It still
+  adds no dependency of its own.
+- `analyze.py` computes its statistics by hand with the standard library, and still does. That
+  is no longer true of the repository as a whole: `tools/audit_original.py` uses numpy,
+  scikit-learn and pyflakes, which `requirements.txt` pins.

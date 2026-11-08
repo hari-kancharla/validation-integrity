@@ -176,7 +176,9 @@ def classifiers(exclude_historical=False):
             "single_feature_auc": single}
         for row, pred in zip(rows, prediction):
             all_rows.append({"condition": condition, **row, "oof_score": float(pred)})
-        print(condition, {k:results[condition][k] for k in ("n_cases","accuracy","auroc","auroc_case_bootstrap_95ci")}, flush=True)
+        print(condition, {k: results[condition][k] for k in (
+            "n_cases", "accuracy", "auroc", "auroc_case_bootstrap_95ci",
+            "within_case_pair_ranking_accuracy_ties_half")}, flush=True)
     stem = "original"
     if exclude_historical:
         stem += "_excluding_historical"

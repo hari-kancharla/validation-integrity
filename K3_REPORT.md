@@ -72,7 +72,7 @@ ae42be19bc346f18552977dad2827915f3e94fca6fe247c929d563fcac9baeb9  protocol_k3.md
 
 `mechanism_subset.json` names 30 cases drawn by the frozen
 procedure from a pool whose digest is `28e310d26dff0d6f2865bf52c4419996cc0782b1e381860472546f5b91d29025`.
-Re-derive it with `python mechanism_subset.py`, which prints the same list or says the
+Re-derive it with `.venv/bin/python mechanism_subset.py`, which prints the same list or says the
 pool has moved.
 
 ## 4. Test count
@@ -87,7 +87,10 @@ pool has moved.
 | `test_recording.py` | 22 |
 | **total** | **145** |
 
-All 145 pass. The 36 in `test_analysis.py` are the K1 and K2 tests, unchanged and still
+All 145 pass. Three further files were added after this report — `test_budget_safety.py`,
+`test_run_evidence.py` and `test_study_integrity.py`, 50 tests between them — so the
+current total is 195, which is what `pytest` collects today. The 36 in `test_analysis.py`
+are the K1 and K2 tests, unchanged and still
 passing; the other 109 are new. Every expected number in `test_analysis_k3.py` is worked
 by hand in a comment above the assertion.
 
@@ -100,42 +103,42 @@ open a socket without `CONFIRM_RUN=1`, and both charge the shared ledger before 
 Dry run first, which is the default and costs nothing:
 
 ```bash
-python run_experiment.py --mode k3p
+.venv/bin/python run_experiment.py --mode k3p
 ```
 
 Tier P, power. Every case, both variants, `E_NONE` and `E_COUPLED`, 3 samples:
 
 ```bash
-CONFIRM_RUN=1 ANTHROPIC_API_KEY=... REVIEWER_MODELS=claude-haiku-4-5-20251001 python run_experiment.py --mode k3p
+CONFIRM_RUN=1 ANTHROPIC_API_KEY=... REVIEWER_MODELS=claude-haiku-4-5-20251001 .venv/bin/python run_experiment.py --mode k3p
 ```
 
 Tier M, mechanism. The 30 frozen cases, every condition that has a payload, 3 samples:
 
 ```bash
-CONFIRM_RUN=1 ANTHROPIC_API_KEY=... REVIEWER_MODELS=claude-haiku-4-5-20251001 python run_experiment.py --mode k3m
+CONFIRM_RUN=1 ANTHROPIC_API_KEY=... REVIEWER_MODELS=claude-haiku-4-5-20251001 .venv/bin/python run_experiment.py --mode k3m
 ```
 
 Tier M with the reliance probe, which adds one further call on the first sample of each unit:
 
 ```bash
-CONFIRM_RUN=1 ANTHROPIC_API_KEY=... REVIEWER_MODELS=claude-haiku-4-5-20251001 python run_experiment.py --mode k3m --reliance-probe
+CONFIRM_RUN=1 ANTHROPIC_API_KEY=... REVIEWER_MODELS=claude-haiku-4-5-20251001 .venv/bin/python run_experiment.py --mode k3m --reliance-probe
 ```
 
 A bounded transport check against one case, one sample per cell, writing to a run directory
 the analysis ignores:
 
 ```bash
-CONFIRM_RUN=1 ANTHROPIC_API_KEY=... python run_experiment.py --mode k3p --smoke
+CONFIRM_RUN=1 ANTHROPIC_API_KEY=... .venv/bin/python run_experiment.py --mode k3p --smoke
 ```
 
 Analysis of whatever has been collected, and the ledger:
 
 ```bash
-python analyze.py
+.venv/bin/python analyze.py
 ```
 
 ```bash
-python call_budget.py
+.venv/bin/python call_budget.py
 ```
 
 ## 6. What did not fit, and why
@@ -160,7 +163,8 @@ H9 can.
 | `click_shared_default_precedence_001` | `FORBIDDEN_TEXT` — `click/core.py` uses the words `hidden` and `condition` in their ordinary senses, and both are on the frozen linter's forbidden list |
 | `rich_table_padding_width_001` | `IMPLEMENTATION_TOO_LARGE_TO_SHOW` — 935,325 bytes, against a 400,000-byte cap on what a payload can show in full |
 
-Two of these are collisions with the frozen gate rather than problems with the packs. The
+Three of these are collisions with two rules in the frozen gate rather than problems with
+the packs. The
 forbidden-substring list and the module-level test-count check were written for authored
 twins, where those words would leak the study and where a suite has no reason to use classes;
 real upstream code owes them nothing. Under the rule that frozen files stay frozen, that is a

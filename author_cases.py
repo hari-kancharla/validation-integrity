@@ -314,7 +314,7 @@ def main() -> int:
     if not args.check_only:
         for case in cases:
             write_case(case)
-        print(f"\nWrote {len(cases)} case(s) into {AUTHORED_DIR.relative_to(HERE.parent.parent)}")
+        print(f"\nWrote {len(cases)} case(s) into {AUTHORED_DIR.relative_to(HERE)}")
     print("author_cases: OK")
     return 0
 
