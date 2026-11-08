@@ -37,7 +37,7 @@ from pathlib import Path
 import dose
 
 HERE = Path(__file__).resolve().parent
-REPO_ROOT = HERE.parent.parent
+REPO_ROOT = HERE
 SOURCE_PACK = REPO_ROOT / "benchmark_sets" / "integrity_pilot_v0"
 AUTHORED_DIR = HERE / "authored"
 HISTORICAL_DIR = HERE / "historical"

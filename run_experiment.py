@@ -37,6 +37,7 @@ already recorded, so an interrupted run resumes rather than duplicating work.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -49,6 +50,8 @@ from pathlib import Path
 import build_payloads
 import mechanism_subset
 import recording
+import run_evidence
+from study_integrity import verify_frozen_files
 from call_budget import HARD_CAP as HARD_CALL_CAP
 from call_budget import BudgetExhausted, CallBudget
 from reviewer_client import (
@@ -57,10 +60,13 @@ from reviewer_client import (
     STATUS_TRANSPORT_FAIL,
     ReviewerClient,
     resolve_model,
+    resolve_provider,
+    MAX_TOKENS,
+    TEMPERATURE,
 )
 
 HERE = Path(__file__).resolve().parent
-REPO_ROOT = HERE.parent.parent
+REPO_ROOT = HERE
 CASES_DIR = HERE / "cases"
 PAYLOADS_DIR = HERE / "payloads"
 RUNS_DIR = HERE / "runs"
@@ -260,18 +266,12 @@ def key_of(item: dict) -> tuple:
     )
 
 
-def already_recorded(records_path: Path) -> set[tuple]:
-    done: set[tuple] = set()
-    if not records_path.is_file():
-        return done
-    for line in records_path.read_text().splitlines():
-        if not line.strip():
-            continue
-        try:
-            done.add(key_of(json.loads(line)))
-        except (json.JSONDecodeError, KeyError):
-            continue
-    return done
+def already_recorded(records_path: Path, plan: dict | None = None) -> set[tuple]:
+    if not records_path.exists() and not records_path.is_symlink():
+        return set()
+    if plan is None:
+        raise ValueError("existing records require a frozen call plan before resume")
+    return {key_of(row) for row in run_evidence.validate_records(records_path, plan)}
 
 
 def main() -> int:
@@ -287,6 +287,7 @@ def main() -> int:
     parser.add_argument("--skip-build", action="store_true")
     args = parser.parse_args()
 
+    frozen_files = verify_frozen_files(HERE)
     conditions = CONDITIONS_BY_MODE[args.mode]
     run_tier = RUN_TIER_BY_MODE[args.mode]
     if args.reliance_probe and args.mode not in PROBE_MODES:
@@ -333,6 +334,23 @@ def main() -> int:
         all_excluded = excluded
     # The probe is a real call against the same ledger, so the gate has to count it.
     total_calls += probe_calls
+    collection_plan = run_evidence.build_plan(
+        blocks=blocks, mode=args.mode, run_tier=run_tier, seed=SEED,
+        smoke=bool(args.smoke), reliance_probe=bool(args.reliance_probe),
+        frozen_files=frozen_files, payload_reader=lambda item: payload_path(item).read_text(),
+        configuration={
+            "provider": resolve_provider(), "temperature": TEMPERATURE, "max_tokens": MAX_TOKENS,
+            "source_sha256": {name: hashlib.sha256((HERE / name).read_bytes()).hexdigest()
+                              for name in ("run_experiment.py", "reviewer_client.py", "recording.py", "run_evidence.py")},
+        },
+    )
+    previous = run_evidence.inspect_run(Path(args.run_dir), collection_plan) if args.run_dir else []
+    previous_keys = {key_of(row) for row in previous}
+    remaining_items = [item for _, plan in blocks for item in plan if key_of(item) not in previous_keys]
+    remaining_calls = len(remaining_items) + (
+        sum(item["sample_idx"] == PROBE_SAMPLE_INDEX for item in remaining_items)
+        if args.reliance_probe else 0
+    )
 
     print("\n--- every tier, per reviewer, at today's pool ---")
     print(tier_table(reviewers, samples))
@@ -381,8 +399,9 @@ def main() -> int:
                   f"tokens, "
                   f"{'cost unknown' if probe_cost is None else f'<= ${probe_cost:.2f}'}")
     budget = CallBudget()
-    fits, ledger_message = budget.check_plan(total_calls, f"mode {args.mode}")
+    fits, ledger_message = budget.check_plan(remaining_calls, f"mode {args.mode} remaining")
     print(f"  PLANNED CALLS:    {total_calls}")
+    print(f"  REMAINING CALLS:  {remaining_calls}")
     print(f"  call ledger:      {budget.describe()}")
     print(f"  ledger check:     {ledger_message}")
     print(f"  ESTIMATED COST:   "
@@ -405,11 +424,23 @@ def main() -> int:
     prefix = "smoke_" if args.smoke else f"{args.mode}_"
     run_dir = Path(args.run_dir) if args.run_dir else RUNS_DIR / f"{prefix}{utc_stamp()}"
     run_dir.mkdir(parents=True, exist_ok=True)
+    with run_evidence.collection_lock(run_dir):
+        return _collect_run(args, run_dir, collection_plan, blocks, budget, reviewers,
+                            cases, conditions, run_tier, total_calls, all_excluded)
+
+
+def _collect_run(args, run_dir, collection_plan, blocks, budget, reviewers,
+                 cases, conditions, run_tier, total_calls, all_excluded):
     records_path = run_dir / "records.jsonl"
     manifest_path = run_dir / "manifest.json"
-    done = already_recorded(records_path)
+    done = {key_of(row) for row in run_evidence.prepare_run(run_dir, collection_plan)}
 
-    started_at = datetime.now(timezone.utc).isoformat()
+    prior_manifest = run_evidence.loads(run_evidence.read(manifest_path)) if manifest_path.exists() or manifest_path.is_symlink() else {}
+    if prior_manifest and prior_manifest.get("plan_sha256") != run_evidence.digest(collection_plan):
+        raise ValueError("existing run manifest differs from the call plan")
+    session_started_at = datetime.now(timezone.utc).isoformat()
+    started_at = prior_manifest.get("started_at", session_started_at)
+    expected_items = {key_of(item): item for item in collection_plan["items"]}
     stopped_early = None
     calls_made = 0
     per_reviewer: dict[str, dict] = {}
@@ -430,10 +461,16 @@ def main() -> int:
         with records_path.open("a") as handle:
             for index, item in enumerate(remaining, start=1):
                 payload = payload_path(item).read_text()
+                if recording.payload_digest(payload) != expected_items[key_of(item)]["payload_sha256"]:
+                    raise ValueError("payload changed after planning; collection stopped")
+                run_evidence.mark_attempt(run_dir, collection_plan, item)
+                calls_before = client.calls_made
                 try:
                     sample = client.review(payload)
                 except BudgetExhausted as exhausted:
                     stopped_early = str(exhausted)
+                    if client.calls_made == calls_before:
+                        (run_dir / "inflight.json").unlink()
                     print(f"  STOP: {stopped_early}")
                     break
                 reliance = None
@@ -458,6 +495,8 @@ def main() -> int:
                 )
                 handle.write(json.dumps(record) + "\n")
                 handle.flush()
+                os.fsync(handle.fileno())
+                (run_dir / "inflight.json").unlink()
                 marker = {STATUS_OK: ".", STATUS_INVALID: "I", STATUS_TRANSPORT_FAIL: "T"}[
                     sample.status
                 ]
@@ -478,13 +517,13 @@ def main() -> int:
             break
 
     totals = {"OK": 0, STATUS_INVALID: 0, STATUS_TRANSPORT_FAIL: 0}
-    for line in records_path.read_text().splitlines():
-        if not line.strip():
-            continue
-        status = json.loads(line).get("status", "OK")
-        totals[status if status in totals else "OK"] += 1
+    for row in run_evidence.validate_records(records_path, collection_plan):
+        totals[row["status"]] += 1
 
     manifest = {
+        **prior_manifest,
+        "sessions": [*prior_manifest.get("sessions", []), {"started_at": session_started_at, "finished_at": datetime.now(timezone.utc).isoformat(), "http_calls": calls_made}],
+        "plan_sha256": run_evidence.digest(collection_plan),
         "run_id": run_dir.name,
         "mode": args.mode,
         "run_tier": run_tier,
@@ -508,7 +547,7 @@ def main() -> int:
         "case_tiers": {case["case_id"]: case.get("tier", "authored") for case in cases},
         "case_domains": {case["case_id"]: case.get("domain", "unclassified") for case in cases},
         "conditions": list(conditions),
-        "samples_per_cell": samples,
+        "samples_per_cell": collection_plan["samples_per_cell"],
         "excluded_cells": all_excluded,
         "started_at": started_at,
         "finished_at": datetime.now(timezone.utc).isoformat(),
@@ -521,7 +560,7 @@ def main() -> int:
         "budget_spent_after": budget.spent(),
         "stopped_early": stopped_early,
     }
-    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    run_evidence.write_document(manifest_path, manifest)
 
     print("\n--- run summary ---")
     print(f"  records:        {manifest['records_written']} / {total_calls} planned")
@@ -529,7 +568,7 @@ def main() -> int:
     print(f"  transport fail: {manifest['transport_fail_count']}")
     print(f"  http calls:     {calls_made}")
     print(f"  call ledger:    {budget.describe()}")
-    print(f"  manifest:       {manifest_path.relative_to(HERE)}")
+    print(f"  manifest:       {manifest_path}")
     return 0 if stopped_early is None else 3
 
 

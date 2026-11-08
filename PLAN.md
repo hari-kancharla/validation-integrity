@@ -101,7 +101,8 @@ to 6000. No step below made an API call.
 - [x] **Step 3 — Scale the pool.** 84 new authored twins across 12 domains, built from
       compact specs by `author_cases.py` and verified by execution before the frozen gate
       sees them; reserves added to the 6 K2-era authored cases; a real-defect tier derived
-      by `build_historical.py` from the repository's own `arena import-fix` output. 98 cases
+      by `build_historical.py` from `arena import-fix` output — a command belonging to the
+      harness this study was then part of, not to this repository. 98 cases
       pass the frozen `lint_cases.py` unchanged.
 - [x] **Step 4 — Tiered run design, built and dry-run, not run.** `--mode k3p` and
       `--mode k3m`, each launchable on its own, with `--reliance-probe` for the mechanism
@@ -122,5 +123,5 @@ to 6000. No step below made an API call.
   been run: it needs API calls that were never authorised. The K2 cell-exclusion rule covers
   this, the gate prints it, and Tier M collects the five conditions that do exist.
 - The historical tier admitted 1 of the 5 ingested packs. Every refusal is recorded with its
-  reason; two of them are collisions with checks in the frozen linter, which is a blocking
+  reason; three of them are collisions with checks in the frozen linter, which is a blocking
   condition rather than something to work around.

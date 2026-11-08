@@ -17,6 +17,6 @@ Every file below is frozen: it is not edited after the moment recorded here. Ver
 digest is `28e310d26dff0d6f2865bf52c4419996cc0782b1e381860472546f5b91d29025`. That digest covers exactly what the draw reads:
 each case's id, tier and domain. Re-derive the list with
 
-    python mechanism_subset.py
+    .venv/bin/python mechanism_subset.py
 
 which prints the same 30 ids for the same pool, or reports that the pool has moved.

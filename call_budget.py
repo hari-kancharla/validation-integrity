@@ -22,6 +22,8 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -39,31 +41,73 @@ class BudgetExhausted(RuntimeError):
 
 class CallBudget:
     def __init__(self, path: Path = LEDGER_PATH, cap: int = HARD_CAP) -> None:
+        if type(cap) is not int or cap <= 0:
+            raise ValueError("call cap must be a positive integer")
         self.path = path
         self.cap = cap
 
     # -- state -------------------------------------------------------------------------
 
     def load(self) -> dict:
+        if self.path.is_symlink():
+            raise SystemExit("Refusing to spend against a symlinked ledger.")
         if not self.path.is_file():
+            if self.path.exists():
+                raise SystemExit("Call ledger must be a regular JSON file.")
             return {"cap": self.cap, "spent": 0, "invocations": []}
         try:
-            ledger = json.loads(self.path.read_text())
-        except json.JSONDecodeError as error:
+            ledger = json.loads(self.path.read_text(), object_pairs_hook=_unique_keys)
+        except (ValueError, UnicodeError) as error:
             raise SystemExit(
-                f"{self.path} is not readable JSON ({error}). Refusing to spend against an "
-                f"unreadable ledger; inspect or remove it by hand."
+                "Call ledger is not readable, unambiguous JSON. Refusing to spend; "
+                "inspect and recover it before continuing."
             ) from error
-        ledger.setdefault("cap", self.cap)
-        ledger.setdefault("spent", 0)
-        ledger.setdefault("invocations", [])
+        if (
+            not isinstance(ledger, dict)
+            or type(ledger.get("cap")) is not int
+            or ledger["cap"] <= 0
+            or type(ledger.get("spent")) is not int
+            or ledger["spent"] < 0
+            or not isinstance(ledger.get("invocations"), list)
+            or any(not isinstance(entry, dict) for entry in ledger["invocations"])
+        ):
+            raise SystemExit("Call ledger has invalid accounting fields; refusing to spend.")
         return ledger
+
+    @contextmanager
+    def _locked(self):
+        # Lock the stable parent directory: atomic replacement changes the ledger's
+        # inode. A lock on that replaced file would not serialize later writers.
+        # The lock leaves no sidecar behind and the OS releases it on process exit.
+        try:
+            import fcntl
+        except ImportError as error:
+            raise SystemExit(
+                "Spending requires POSIX file locking on a local filesystem."
+            ) from error
+        descriptor = os.open(self.path.parent, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX)
+            yield
+        finally:
+            os.close(descriptor)
 
     def _store(self, ledger: dict) -> None:
         """Write through a temporary file so a crash cannot leave a half-written ledger."""
-        temporary = self.path.with_suffix(".json.tmp")
-        temporary.write_text(json.dumps(ledger, indent=2) + "\n")
-        os.replace(temporary, self.path)
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", dir=self.path.parent, prefix=".budget-", suffix=".tmp", delete=False
+            ) as handle:
+                temporary = Path(handle.name)
+                json.dump(ledger, handle, indent=2, allow_nan=False)
+                handle.write("\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, self.path)
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
 
     def spent(self) -> int:
         return int(self.load()["spent"])
@@ -74,6 +118,8 @@ class CallBudget:
     # -- gates -------------------------------------------------------------------------
 
     def check_plan(self, planned: int, label: str) -> tuple[bool, str]:
+        if type(planned) is not int or planned < 0:
+            raise ValueError("planned calls must be a non-negative integer")
         spent = self.spent()
         remaining = max(0, self.cap - spent)
         if planned > remaining:
@@ -82,36 +128,49 @@ class CallBudget:
                 f"{self.cap} cap ({spent} already spent across earlier invocations)"
             )
         return True, (
-            f"{label} plans {planned} call(s); {spent} spent, {remaining} remain of "
-            f"{self.cap}"
+            f"{label} plans {planned} call(s); {spent} spent, {remaining} remain of {self.cap}"
         )
 
     def charge(self, count: int = 1, label: str = "") -> int:
         """Persist ``count`` calls before they are made. Raises once the cap is reached."""
-        ledger = self.load()
-        spent = int(ledger["spent"])
-        if spent + count > self.cap:
-            raise BudgetExhausted(
-                f"call cap of {self.cap} reached: {spent} already spent, "
-                f"{label or 'this call'} would take it to {spent + count}"
-            )
-        ledger["spent"] = spent + count
-        self._store(ledger)
-        return ledger["spent"]
+        if type(count) is not int or count <= 0:
+            raise ValueError("charged calls must be a positive integer")
+        with self._locked():
+            ledger = self.load()
+            spent = ledger["spent"]
+            if spent + count > self.cap:
+                raise BudgetExhausted(
+                    f"call cap of {self.cap} reached: {spent} already spent, "
+                    f"{label or 'this call'} would take it to {spent + count}"
+                )
+            ledger["spent"] = spent + count
+            ledger["cap"] = self.cap
+            self._store(ledger)
+            return ledger["spent"]
 
     def note(self, label: str, **fields) -> None:
         """Append a record of one invocation, for the audit trail."""
-        ledger = self.load()
-        entry = {"label": label, "at": datetime.now(timezone.utc).isoformat()}
-        entry.update(fields)
-        ledger["invocations"].append(entry)
-        self._store(ledger)
+        with self._locked():
+            ledger = self.load()
+            entry = {"label": label, "at": datetime.now(timezone.utc).isoformat()}
+            entry.update(fields)
+            ledger["invocations"].append(entry)
+            self._store(ledger)
 
     # -- reporting ---------------------------------------------------------------------
 
     def describe(self) -> str:
         spent = self.spent()
         return f"{spent} spent, {self.cap - spent} remaining of {self.cap}"
+
+
+def _unique_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate ledger field")
+        result[key] = value
+    return result
 
 
 def main() -> int:
@@ -124,9 +183,7 @@ def main() -> int:
     if ledger["invocations"]:
         print("  invocations:")
         for entry in ledger["invocations"]:
-            extras = " ".join(
-                f"{k}={v}" for k, v in entry.items() if k not in ("label", "at")
-            )
+            extras = " ".join(f"{k}={v}" for k, v in entry.items() if k not in ("label", "at"))
             print(f"    {entry['at']}  {entry['label']}  {extras}")
     else:
         print("  invocations: none recorded")
