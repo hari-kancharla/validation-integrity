@@ -87,13 +87,15 @@ def mode():
             if probe and probe.returncode == 0:
                 _MODE = ("sandbox-exec", notes)
                 return _MODE
-        notes.append("macOS sandbox-exec unavailable or unusable; pytest-socket fallback has Python-only coverage.")
-        # Last resort is explicit and fails closed if pytest-socket is absent.
-        import importlib.util
-        if importlib.util.find_spec("pytest_socket") is None:
-            raise RuntimeError("No usable network isolation mechanism; install pytest-socket offline dependency.")
-        _MODE = ("pytest-socket", notes)
-        return _MODE
+        notes.append("macOS sandbox-exec unavailable or unusable.")
+        # There is no safe fallback. A Python audit hook is installed per interpreter
+        # and is not inherited, so it cannot confine a child process, and the child
+        # preflight could never pass on such a mode. Fail closed instead of selecting
+        # a backend that only looks like isolation.
+        raise RuntimeError(
+            "No OS-level isolation available: this needs Linux with unshare, or macOS "
+            "with sandbox-exec. A Python-level guard does not confine child processes, "
+            "so there is no fallback. " + " ".join(notes))
 
 
 BOOTSTRAP = r'''
@@ -103,7 +105,7 @@ from pathlib import Path
 os.environ.clear()
 os.environ.update({"PATH": sys.argv[1], "HOME": sys.argv[2], "LANG": "C"})
 sys.dont_write_bytecode = True
-root = Path.cwd()
+root = Path.cwd().resolve()
 scratch = root / 'tmp'
 scratch.mkdir()
 tempfile.tempdir = str(scratch)
@@ -115,10 +117,17 @@ def guard(event, args):
     if event in {"socket.connect", "socket.bind", "socket.getaddrinfo", "socket.sendto"}:
         raise PermissionError("K4 sandbox: network denied")
     if event == "open" and isinstance(args[0], (str, bytes, os.PathLike)):
-        path = Path(os.path.abspath(os.fsdecode(args[0])))
-        name = path.name
-        if name.startswith(".env") or name in {".netrc", "credentials", "id_rsa", "id_ed25519"}:
-            raise PermissionError("K4 sandbox: credential access denied")
+        lexical = Path(os.path.abspath(os.fsdecode(args[0])))
+        # Enforce against the real target, not the name written in the call. A symlink
+        # created inside scratch otherwise defeats both checks below: its own name
+        # hides the target's, and its own path is lexically inside the allowed root.
+        try:
+            path = Path(os.path.realpath(lexical))
+        except OSError:
+            path = lexical
+        for name in {lexical.name, path.name}:
+            if name.startswith(".env") or name in {".netrc", "credentials", "id_rsa", "id_ed25519"}:
+                raise PermissionError("K4 sandbox: credential access denied")
         roots = [root, Path(sys.prefix), Path(sys.base_prefix), Path('/System'),
                  Path('/usr'), Path('/Library'), Path('/dev'), Path('/private/var/db')]
         # Also admit each root's resolved form. sys.prefix and sys.base_prefix can be
@@ -140,9 +149,6 @@ def guard(event, args):
         if writing and root != path and root not in path.parents and str(path) != '/dev/null':
             raise PermissionError("K4 sandbox: write outside scratch denied")
 sys.addaudithook(guard)
-if sys.argv[3] == "pytest-socket":
-    import pytest_socket
-    pytest_socket.disable_socket()
 args = sys.argv[4:]
 if args[0] == "-m":
     sys.argv = [args[1], *args[2:]]
@@ -350,7 +356,8 @@ def _self_test_checks():
             "limits": {"memory": "No RLIMIT_AS memory cap on macOS.",
                        "processes": "RLIMIT_NPROC current-user baseline +64 (clamped to OS hard limit); per-user, not a process namespace. Timeout kills process group.",
                        "cpu": "RLIMIT_CPU per child; wall timeout kills the process group.",
-                       "fallback": "Python audit guard also denies sockets; pytest-socket is last resort only."}}
+                       "fallback": "The Python audit guard denies sockets in-process as well; there is no\n"
+                                   "non-OS fallback, since a hook does not reach child processes."}}
 
 
 def self_test():
