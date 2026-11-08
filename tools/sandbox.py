@@ -85,11 +85,25 @@ def mode():
                     "import importlib.metadata as m,json,sys; print(json.dumps({'python':sys.version_info[:2],'pins':{d.metadata['Name'].lower().replace('_','-'):d.version for d in m.distributions()}}))"], home)
                 if ready and ready.returncode == 0:
                     data = json.loads(ready.stdout)
-                    expected = dict(line.split("==") for line in (ROOT / "requirements-k4.txt").read_text().splitlines() if "==" in line)
-                    if data["python"] == [3, 12] and all(data["pins"].get(k) == v for k, v in expected.items()):
+                    pins = ROOT / "requirements.txt"
+                    expected = (
+                        dict(
+                            line.split("==")
+                            for line in pins.read_text().splitlines()
+                            if "==" in line
+                        )
+                        if pins.is_file()
+                        else {}
+                    )
+                    if expected and data["python"] == [3, 12] and all(
+                        data["pins"].get(k) == v for k, v in expected.items()
+                    ):
                         _MODE = ("docker", notes)
                         return _MODE
-            notes.append("Docker CLI found; no usable preinstalled K4 Python/package image. No image pulled or daemon started.")
+            notes.append(
+                "Docker CLI found; no usable preinstalled image matching requirements.txt. "
+                "No image pulled or daemon started."
+            )
         else:
             notes.append("Docker unavailable.")
         unshare = shutil.which("unshare")
@@ -137,8 +151,20 @@ def guard(event, args):
         name = path.name
         if name.startswith(".env") or name in {".netrc", "credentials", "id_rsa", "id_ed25519"}:
             raise PermissionError("K4 sandbox: credential access denied")
-        allowed = [root, Path(sys.prefix), Path(sys.base_prefix), Path('/System'),
-                   Path('/usr'), Path('/Library'), Path('/dev'), Path('/private/var/db')]
+        roots = [root, Path(sys.prefix), Path(sys.base_prefix), Path('/System'),
+                 Path('/usr'), Path('/Library'), Path('/dev'), Path('/private/var/db')]
+        # Also admit each root's resolved form. sys.prefix and sys.base_prefix can be
+        # reported through a symlink -- a Homebrew interpreter reports
+        # /opt/homebrew/opt/python@X but loads its stdlib from the Cellar path it
+        # points at -- and without this the interpreter cannot read its own files.
+        # These are the same directories, so nothing new is admitted.
+        allowed = []
+        for candidate in roots:
+            allowed.append(candidate)
+            try:
+                allowed.append(candidate.resolve())
+            except OSError:
+                pass
         if not any(path == p or p in path.parents for p in allowed):
             raise PermissionError("K4 sandbox: file outside scratch/runtime denied")
         writing = (args[1] and any(c in args[1] for c in 'wax+')) or (
@@ -282,17 +308,52 @@ def run_suite(documents, target="tests", **kwargs):
     return run(["-m", "pytest", "-q", "-p", "no:cacheprovider", target],
                documents_files(documents), **kwargs)
 
+# Which error a blocked connection raises depends on the backend, so the child probe
+# ships as its own file rather than a string nested three deep.
+_CHILD_NETWORK_CHILD = """\
+import errno, socket, sys
+
+# sandbox-exec and LSM denials surface as EPERM or EACCES. A fresh network namespace
+# leaves loopback down instead, and connecting to 127.0.0.1 gives ENETUNREACH. Both
+# are denials. ECONNREFUSED is deliberately not in this set: it means the stack routed
+# the connection and nothing happened to be listening, so the child was NOT isolated.
+DENIED = {errno.EPERM, errno.EACCES, errno.ENETUNREACH, errno.EHOSTUNREACH,
+          errno.EAFNOSUPPORT}
+
+try:
+    socket.create_connection(("127.0.0.1", 9), timeout=0.1).close()
+except OSError as error:
+    if error.errno in DENIED:
+        print("OS_NETWORK_DENIED", errno.errorcode.get(error.errno, error.errno))
+        sys.exit(9)
+    print("OS_NETWORK_REACHED", errno.errorcode.get(error.errno, error.errno))
+    sys.exit(8)
+print("OS_NETWORK_CONNECTED")
+sys.exit(7)
+"""
+
+_CHILD_NETWORK_PROBE = """\
+import subprocess, sys
+
+result = subprocess.run([sys.executable, "child_probe.py"], capture_output=True, text=True)
+print(result.stdout)
+assert result.returncode == 9 and "OS_NETWORK_DENIED" in result.stdout, (
+    result.stdout + result.stderr
+)
+"""
+
 
 def _self_test_checks():
     checks = {}
-    for name, code, timeout in [
-        ("network", "import socket; socket.create_connection(('192.0.2.1',443),timeout=.1)", 5),
-        ("environment", "import os; print(os.environ['K4_SANDBOX_SECRET_PROBE'])", 5),
-        ("infinite_loop", "while True: pass", 2),
-        ("normal", "import os; assert set(os.environ)=={'PATH','HOME','LANG'}; print('OK')", 5),
-        ("child_network", "import subprocess,sys\nr=subprocess.run([sys.executable,'-c',\"import socket,sys\\ntry: socket.create_connection(('127.0.0.1',9),timeout=.1)\\nexcept PermissionError: print('OS_NETWORK_DENIED'); sys.exit(9)\\nsys.exit(0)\"],capture_output=True,text=True)\nprint(r.stdout)\nassert r.returncode==9 and 'OS_NETWORK_DENIED' in r.stdout, r.stderr", 5),
+    for name, code, timeout, extra in [
+        ("network", "import socket; socket.create_connection(('192.0.2.1',443),timeout=.1)", 5, {}),
+        ("environment", "import os; print(os.environ['K4_SANDBOX_SECRET_PROBE'])", 5, {}),
+        ("infinite_loop", "while True: pass", 2, {}),
+        ("normal", "import os; assert set(os.environ)=={'PATH','HOME','LANG'}; print('OK')", 5, {}),
+        ("child_network", _CHILD_NETWORK_PROBE, 5, {"child_probe.py": _CHILD_NETWORK_CHILD}),
     ]:
-        result = run(["probe.py"], {"probe.py": code + "\n"}, timeout=timeout, cpu_seconds=2)
+        result = run(["probe.py"], {"probe.py": code + "\n", **extra},
+                     timeout=timeout, cpu_seconds=2)
         if name in {"normal", "child_network"}:
             passed = result.returncode == 0
         elif name == "network":
