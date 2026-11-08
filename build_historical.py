@@ -44,7 +44,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-REPO_ROOT = HERE.parent.parent
+REPO_ROOT = HERE
 PACKS_DIR = REPO_ROOT / "benchmark_sets" / "realfix_seed_v0"
 SOURCES_DIR = REPO_ROOT / "benchmark_sources" / "realfix_seed_v0"
 HISTORICAL_DIR = HERE / "historical"

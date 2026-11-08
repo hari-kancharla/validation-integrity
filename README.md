@@ -127,6 +127,10 @@ run_experiment.py, analyze.py                 execution and analysis
 study_integrity.py, run_evidence.py           frozen-input check, run audit
 tools/                                        surface audit, case validation
 gen_independent_tests.py                      the E_INDEP generator, never run
+build_historical.py                           how the historical twin was built;
+                                              its source pack is not vendored, so
+                                              this records the build rather than
+                                              reproducing it
 ```
 
 `gen_independent_tests.py` is why H4 and H5 are unestimable: the independent suites they
