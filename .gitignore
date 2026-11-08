@@ -7,3 +7,4 @@ venv/
 
 # Experiment output; runs are recorded deliberately, not swept in:
 runs/
+audit_out/
