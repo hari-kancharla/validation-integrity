@@ -3,9 +3,13 @@
 ## Branch decision: **BRANCH A** (reuse existing paired cases)
 
 The repository already contains a certified pack of paired correct/incorrect changes with a
-hidden oracle: `benchmark_sets/integrity_pilot_v0`. All **8** of its pairs satisfy the three
-Branch A criteria (verified by execution, not by reading metadata — evidence below), which is
-at or above the threshold of 6. The decision rule therefore selects Branch A.
+hidden oracle: `benchmark_sets/integrity_pilot_v0`. **Seven** of its 8 pairs satisfy the three
+Branch A criteria, verified by execution rather than by reading metadata — evidence below —
+which is at or above the threshold of 6. The decision rule therefore selects Branch A.
+`invoice_tax_golden_drift_001` is the pair that does not: `build_payloads.admit()` refuses it
+for a non-Python file in its shown workspace, `tests/golden/invoice.txt`, because its defect
+turns on a stored golden asset. It is vendored anyway so the refusal reproduces on every
+build. An earlier revision of this file claimed all 8, which the builder's own gate refutes.
 
 Per the Phase 0 rule, a case adapter in `build_payloads.py` maps the existing pack layout onto
 the Phase 3 payload schema. Every other phase is unchanged.
@@ -15,6 +19,11 @@ the Phase 3 payload schema. Every other phase is unchanged.
 ## 1. What exists
 
 ### 1.1 Benchmark sets
+
+This survey was made while the study was still a subdirectory of the code-review harness it
+borrowed cases from, so four of the five paths below are that harness's, not this
+repository's. Only `integrity_pilot_v0` is vendored here, under `benchmark_sets/`, and only
+the parts `build_payloads.py` reads — see its `PROVENANCE.md`.
 
 | Path | Cases | Shape | Paired correct/incorrect? |
 |---|---|---|---|
@@ -47,8 +56,9 @@ Per pair `<pair_id>/`:
 | Pre-change state | `base/` | the repository before either variant |
 | Diffs / repairs / alternates | `<variant>/pr.diff`, `compromised/repairs/*.patch`, `alternates/*` | not used by K1 |
 
-The eight pair ids, with the mechanism the incorrect variant uses (from `pair.yaml`, confirmed
-by `arena integrity-validate`):
+The eight pair ids, with the mechanism the incorrect variant uses, read from `pair.yaml` and
+confirmed at the time by `arena integrity-validate` — the harness's own command, which is not
+part of this repository:
 
 | Pair id | Mechanism |
 |---|---|
@@ -95,7 +105,8 @@ Supporting modules: `arena/integrity/loader.py` (`workspace_dir`, `oracle_dir`,
 (`run_visible_validation`, `run_trusted_oracle`), `arena/integrity/certify.py` (admission
 gates), `arena/integrity/protocol.py` (digests). CLI entry points:
 `arena integrity-validate|integrity-audit|integrity-certify|integrity-run`; `make integrity-check`
-runs the offline half, `make integrity` the executing half.
+runs the offline half, `make integrity` the executing half. None of that is in this
+repository: it describes the harness the pack came from, for the record.
 
 ---
 

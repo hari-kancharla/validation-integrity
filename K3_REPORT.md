@@ -37,7 +37,8 @@ Every one of them passes the frozen `lint_cases.py` unchanged.
 The authored tier is 84 twins written for K3 across the twelve domains the upgrade
 names, plus the 6 authored and 7 adapted twins the pool already held. The historical
 tier is 1 twin derived from a genuine upstream bug fix through the repository's own
-`arena import-fix` output; the four packs that were refused are listed in section 6.
+`arena import-fix` output, a command belonging to the harness this study was then part of
+rather than to this repository; the four packs that were refused are listed in section 6.
 
 ## 2. Planned calls and cost, per tier and per reviewer
 
